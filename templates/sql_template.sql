@@ -1,0 +1,29 @@
+/*
+||
+|| $Log: sql_template.sql,v $
+|| Revision 1.1.1.1  2005/06/07 11:16:08  serge
+||
+||
+*/
+
+SET PAGESIZE 0
+SET TRIMSPOOL ON
+SET LINESIZE 32767
+SET TAB OFF
+SET FEEDBACK OFF
+SET ECHO OFF
+SET VERIFY OFF
+SET TERMOUT OFF
+SET RECSEP OFF
+
+COLUMN begin_date new_val start_date
+SELECT  TO_CHAR( SYSDATE, 'YYYYMMDDHH24MI' ) begin_date
+FROM    DUAL; 
+
+
+SPOOL &filename_&&start_date..txt
+
+SPOOL OFF
+
+SET PAGESIZE 50
+SET TERMOUT ON

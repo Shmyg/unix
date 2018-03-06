@@ -1,0 +1,58 @@
+#!/usr/local/bin/expect -f
+
+proc DCHlogin {} {
+        global confDCHHost
+        global confDCHUser
+        global confDCHPass
+        global confDCHTimeout
+        global confDCHremoteDir
+        global confPUTDir
+        global DCHspawnid
+        
+	set confDCHHost alsftp01
+	set confDCHUser ppaid
+	set confDCHPass dzwta213
+        set timeout 30
+
+        spawn ftp $confDCHHost
+        set DCHspawnid $spawn_id
+
+	puts "INFO: starting ftp to DCH"
+
+        expect timeout {
+                puts "ERROR: timeout while talking to DCH 1"
+                #unlock
+                puts "INFO: Finished."
+                exit 1
+        } "ame*):*"
+
+        send "$confDCHUser\r"
+        expect timeout {
+                puts "ERROR: timeout while talking to DCH 2"
+                #unlock
+                puts "INFO: Finished."
+                exit 1
+        } "assword:"
+
+        send "$confDCHPass\r"
+        expect timeout {
+                puts "ERROR: timeout while talking to DCH 3"
+                #unlock
+                puts "INFO: Finished."
+                exit 1
+        } "ftp>*"
+
+        send "binary\r"
+        expect timeout {
+                puts "ERROR: timeout while talking to DCH 3.5"
+                #unlock
+                puts "INFO: Finished."
+                exit 1
+        } "ftp>*"
+
+        puts "INFO: session with DCH started"
+
+        send "bye"
+}
+
+DCHlogin

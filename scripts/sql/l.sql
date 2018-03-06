@@ -1,0 +1,2 @@
+SET LINESIZE &1
+

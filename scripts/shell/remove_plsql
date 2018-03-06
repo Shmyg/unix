@@ -1,0 +1,5 @@
+# Sed script for removing pl/sql calls from stream created
+# by align_sql
+/\(^| \)SELECT/{
+	p
+}

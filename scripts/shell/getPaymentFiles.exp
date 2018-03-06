@@ -1,0 +1,314 @@
+#!/usr/local/bin/expect -f
+
+#
+# getPaymentFiles.exp is intended for copying directory tree via SFTP
+# Developed by Batalinskyy Mykhaylo, IT, UMC, batal@umc.com.ua
+#
+
+# This two procedures write messages to log file. First procedure is used for logging simple messages,
+# second one is used for logging errors
+proc log_mess str {
+	global fd_log
+
+	puts $fd_log "[exec date] getPaymentFiles: $str"
+} 
+
+proc log_err str {
+	global fd_log
+
+	puts $fd_log "[exec date] getPaymentFiles: ERROR: $str"
+}
+
+# This procedure return real path for file
+proc real_path file_name {
+	set old_path [pwd]
+	cd [exec dirname $file_name]
+	set res "[pwd]/[exec basename $file_name]"
+	cd $old_path
+	return $res
+}
+
+proc read_env_variable name {
+	global env
+	
+	if {[catch {set vara $env($name)}] != 0} {
+		set vara ""
+	}
+	return $vara
+}
+
+# This procedure read parameters from config file. If parameter is absent in config file, the defaul vaule is used. Variables 'host_name',
+# 'user_name' must be defined in any case, If variable config_file is not defined, logs is written to stdout
+proc read_values_from_env {} {
+	global env
+	
+	global host_name
+	set host_name [read_env_variable SOURCE_HOST]
+	global user_name
+	set user_name [read_env_variable SFTP_USERNAME]
+	global password
+	set password [read_env_variable SFTP_PASSWORD]
+	global source_dir
+	set source_dir [read_env_variable SOURCE_DIR]
+	global target_dir
+	set target_dir [read_env_variable TARGET_DIR]
+	global is_remove
+	set is_remove [read_env_variable ISREMOVE]
+	global ls_command
+	set ls_command [read_env_variable LSCOMMAND]
+	global logfile
+	set logfile [read_env_variable LOGFILENAME]
+	global timeout
+	set timeout [read_env_variable TIMEOUT_SFTP]
+	global fd_log
+
+	if {$logfile == ""} {
+		set fd_log stdout
+	} else {
+		if [catch {open $logfile "a+"} fd_log] {
+			set fd_log stdout
+		}
+	}
+	if {$host_name == ""} {
+		log_err "Undefined remote host name"
+		exit 1
+	}
+	if {$user_name == ""} {
+		log_err "Undefined user name"
+		exit 1
+	}
+}
+
+# This procedure provide connection to remote host. This means to establish connection by running sftp process and 
+# to provide authentication by user's name and password. Global session's ID is written to variable FTPSpawnID
+proc connect_remote_host {} {
+	global host_name
+	global user_name
+	global password
+	global timeout
+	global FTPSpawnID
+
+	spawn sftp "$user_name@$host_name"
+	log_mess "sftp process started"
+	set FTPSpawnID $spawn_id
+	expect {
+		timeout {
+			log_err "Timeout while waiting for password prompt"
+			exit 1
+		}
+		"you want to continue connecting*" {
+			send "yes\r"
+			exp_continue
+		}
+		"assword:" {
+			log_mess "connected to remote host $host_name. Sending password"
+			stty -echo
+			send "$password\r"
+			stty echo
+		}
+	}
+	expect {
+		timeout {
+			log_err "Timeout while waiting for sftp prompt"
+			exit 1
+		} 
+		"Permission denied" {
+			log_err "Incorrect password for user $user_name"
+			exit 1
+		}
+		"sftp>*" {
+			log_mess "password is accepted"
+		}
+	}
+}
+
+# This procedure set current directories on locfl fnd remote host according parameters from config file
+proc set_directories {} {
+	global source_dir
+	global target_dir
+
+	if {$source_dir != ""} {
+		log_mess "set directory on remote host to $source_dir"
+		cd_execute_r $source_dir
+	}
+	if {$target_dir != ""} {
+		log_mess "set directory on local host to $target_dir"
+		cd_execute_l $target_dir
+	}
+}
+
+# This procedure provide getting file from remote host. File is removed from remote host, if value of variable 'is_remove' 
+# is equal 'yes' or 'YES'. Value of this variable can be set via config file (parameter ISREMOVE)
+proc get_file {file_name dir_name file_size} {
+	global FTPSpawnID
+	set spawn_id $FTPSpawnID
+	global is_remove
+	
+	send "get $file_name\r"
+	expect {
+		timeout {
+			log_err "Timeout while getting file $dir_name/$file_name"
+			exit 1
+		}
+		"No such file or directory" {
+			log_err "Error while getting file $dir_name/$file_name: No such file"
+			exit 1
+		}
+		"sftp>*" {
+			log_mess "Getting file $dir_name/$file_name (size: $file_size) -> OK!"
+		}
+	}
+	if {$is_remove == "yes" || $is_remove == "YES"} {
+		send "rm $file_name\r"
+		expect {
+			timeout {
+				log_err "Timeout while removing file $dir_name/$file_name"
+				exit 1
+			}
+			"No such file or directory" {
+				log_err "Error while removing file $dir_name/$file_name: No such file"
+				exit 1
+			}
+			"sftp>*" {
+				log_mess "Removing file $dir_name/$file_name -> OK!"
+			}
+		}
+	}
+}
+
+# This procedure set current directory on the remote host according by fisrt argument
+proc cd_execute_r dir_name {
+	global FTPSpawnID
+	set spawn_id $FTPSpawnID
+	
+	send "cd $dir_name\r"
+	expect {
+		timeout {
+			log_err "Timeout while changing current directory on remote host: $dir_name"
+			exit 1
+		}
+		"No such file or directory" {
+			log_err "Timeout while changing current directory on remote host: $dir_name"
+			exit 1
+		}
+		"sftp>*" {}
+	}	
+}
+
+# This procedure create directory on local host. If the directory already exist, no error message is logged
+proc mkdir_execute_l {dir_name subdir_name} {
+	global FTPSpawnID
+	set spawn_id $FTPSpawnID
+
+	send "!mkdir $dir_name\n"
+	expect {
+		timeout {
+			log_err "Timeout while creating directory $dir_name"
+			exit 1
+		}
+		"File exists*sftp>*" {
+#			log_mess "Directory $subdir_name/$dir_name exist"
+		}
+		"mkdir: cannot create $dir_name: (.*)\n" {
+			log_err "Error while creating directory $subdir_name/$dir_name: $expect_out(string,1)"
+			exit 1
+		}
+		"sftp>*" {
+			log_mess "Creating directory $subdir_name/$dir_name -> OK!"
+		}
+	}
+}
+
+# This procedure set current directory on local host
+proc cd_execute_l dir_name {
+	global FTPSpawnID
+	set spawn_id $FTPSpawnID
+	
+	send "lcd $dir_name\r"
+	expect {
+		timeout {
+			log_err "Timeout while changing current directory: $dir_name"
+			exit 1
+		}
+		"No such file or directory" {
+			log_err "Timeout while changing current directory: $dir_name"
+			exit 1
+		}
+		"sftp>*" {}
+	}	
+}
+
+# This procedure provides processing file on the remote host. The first argument keeps the string of the ls-command's output 
+# appropriate to the file to process. If the file is ordinary file, procedure get_file is called. If file if directory, appropriate 
+# direcroty is created on local host, this directory is made current and procedure copy_dir is called to process directory files. After 
+# directory files are processed command 'cd ..' on remote host is execute.
+proc process_file {file_param dir_name} {
+	# Getting file parameters such as type, size and name from ls-command output's string 
+	set file_param [split [exec echo $file_param | tr -s \[:space:\] | cut -d " " -f 1,5,9] " "]
+	set file_type [string index [lindex $file_param 0] 0]
+	set file_size [lindex $file_param 1]
+	set file_name [lindex $file_param 2]
+	if {$file_name == "." || $file_name == ".." || $file_name == ""} return
+	# Working up file according of its type
+	if {$file_type == "-"} {		
+		get_file $file_name $dir_name $file_size
+	} elseif {$file_type == "d"} {
+		log_mess "Process directory $dir_name/$file_name"
+		cd_execute_r $file_name
+		mkdir_execute_l $file_name $dir_name
+		cd_execute_l $file_name
+		copy_dir "$dir_name/$file_name"
+		cd_execute_l ".."
+		cd_execute_r ".."
+	} else {return}
+}
+
+# This procedure provides processing of directory's files. Command 'ls' is executed, 
+# and for each line of output procedure process_file is called
+proc copy_dir dir_name {
+	global FTPSpawnID
+	set spawn_id $FTPSpawnID
+	global ls_command
+	
+	send "$ls_command\r"
+	expect {
+		timeout {
+			log_err "Timeout while waiting for sftp prompt"
+		} 
+		-re "(.*)\nsftp>" {
+			set file_list $expect_out(1,string)
+		}
+	}
+	set i 0
+	foreach file_param [split $file_list \n] {
+		if {$i == 0} {
+			set i 1
+			continue
+		} 
+		if {$i == 1} {
+			set last_param [exec echo $file_param | tr -s \[:space:\] | cut -d " " -f 9]
+			if {$last_param == "."} {
+				set cut_len 0
+			} else {
+				set cut_len [expr [string length $last_param]-1]
+			}
+			set i 2
+			continue
+		} 
+		if {$cut_len == 0} {
+			process_file $file_param $dir_name
+		} else {
+			process_file [string range $file_param 0 [expr [string length $file_param]-$cut_len-1]] $dir_name
+		}
+	}
+}
+
+# Body of main program
+#exp_internal 1
+read_values_from_env
+log_user 0
+connect_remote_host
+set_directories
+copy_dir "."
+send "quit\r"
+

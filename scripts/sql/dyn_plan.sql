@@ -1,0 +1,42 @@
+CREATE	OR REPLACE
+VIEW	dynamic_plan_table
+AS
+SELECT	
+	rawtohex(address) || '_' || child_number statement_id,
+	plan_hash_value	AS plan_id,
+	sysdate timestamp,
+	operation,
+	options,
+	object_node,
+	object_owner,
+	object_name,
+	object_type,
+	object_alias,
+	0 AS object_instance,
+	optimizer,
+	search_columns,
+	id,
+	parent_id,
+	position,
+	cost,
+	cardinality,
+	bytes,
+	other_tag,
+	partition_start,
+	partition_stop,
+	partition_id,
+	other,
+	distribution,
+	cpu_cost,
+	io_cost,
+	temp_space,
+	access_predicates,
+	filter_predicates,
+	time,
+	qblock_name,
+	projection,
+	other_xml,
+	depth,
+	remarks
+FROM	v$sql_plan
+/

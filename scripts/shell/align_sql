@@ -1,0 +1,30 @@
+# Sed script for printing names of objects used in some sql script
+# Created by Shmyg
+# Ackowledgments: San
+
+# Looking for online comments
+/--/{
+	s/--.*//
+}
+
+# Placing every sql statement on single line
+/;/!{
+	H
+	d
+}
+/;/{
+	H
+	s/.*//
+	x
+	s/\n/ /g
+	y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/
+	s/^[[:space:]]\{1,\}//
+	s/[[:space:]]\{1,\}/ /g
+}
+
+# Looking for multiline comment (they are now not multiline :-))
+# but have opening and closing /* and */
+/\/\*/{
+	s/\/\*.*\*\///
+}
+
