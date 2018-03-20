@@ -1,0 +1,11 @@
+directory = /media/wd/Cinema
+session = /home/shmyg/.session
+system.method.set_key = event.download.finished,notify_me,"execute=/home/shmyg/scripts/shell/mail.sh,$d.get_name="
+use_udp_trackers=yes
+schedule = watch_directory,5,5,load_start=/home/shmyg/torrents/*.torrent
+schedule = untied_directory,5,5,stop_untied=
+schedule = tied_directory,5,5,start_tied=
+ratio.enable=
+ratio.min.set=200
+ratio.max.set=1000
+ratio.upload.set=200M
