@@ -2,7 +2,9 @@ directory = /media/wd/Cinema
 session = /home/shmyg/.session
 system.method.set_key = event.download.finished,notify_me,"execute=/home/shmyg/scripts/shell/mail.sh,$d.get_name="
 use_udp_trackers=yes
-schedule = watch_directory,5,5,load_start=/home/shmyg/torrents/*.torrent
+schedule2=watch_directory1,5,5,"load_start=/home/shmyg/torrents/Cinema/*.torrent,d.set_directory=/media/wd/Cinema"
+schedule2=watch_directory2,5,5,"load_start=/home/shmyg/torrents/Kids_Movies/*.torrent,d.set_directory=/media/wd/Kids_Movies"
+schedule2=watch_directory3,5,5,"load_start=/home/shmyg/torrents/Misc/*.torrent,d.set_directory=/media/wd/Misc"
 schedule = untied_directory,5,5,stop_untied=
 schedule = tied_directory,5,5,start_tied=
 ratio.enable=
