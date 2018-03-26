@@ -1,8 +1,6 @@
 /*
 ||
 ||
-|| $Log
-||
 */
 
 ACCEPT owner PROMPT "Enter package owner name: "
