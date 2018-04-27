@@ -1,0 +1,11 @@
+alias sqlplus='rlwrap --history-no-dupes 2 sqlplus64'
+alias vis='vim -R ~/templates/sql_template.sql'
+alias vic='vim -R ~/templates/template.ctl'
+alias vipl='vim -R ~/templates/template.sql'
+alias vish='vim -R ~/templates/template.sh'
+alias mjhead='jhead -autorot -nf%Y%m%d_%H%M%S'
+alias coba='ssh ngeeadmin@coba1.edd.sabcc.ericsson.se' #G0ttacatchemall!
+alias cil='ssh ngeeadmin@cil1.edd.sabcc.ericsson.se' 
+#alias ks='ssh -X dbss@10.49.197.240' #Coh82dur
+#alias ks='ssh -X shmyg@10.49.8.122' #Wor_54_gob or sam/Mig2017
+alias ks='ssh -L 8081:oracle.dbss.local:1521 shmyg@pont'
