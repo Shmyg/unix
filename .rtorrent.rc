@@ -1,13 +1,14 @@
-directory = /media/wd/Cinema
+directory = /media/wd1/Cinema
 session = /home/shmyg/.session
-system.method.set_key = event.download.finished,notify_me,"execute=/home/shmyg/scripts/shell/mail.sh,$d.get_name="
-use_udp_trackers=yes
-schedule2=watch_directory1,5,5,"load_start=/home/shmyg/torrents/Cinema/*.torrent,d.set_directory=/media/wd/Cinema"
-schedule2=watch_directory2,5,5,"load_start=/home/shmyg/torrents/Kids_Movies/*.torrent,d.set_directory=/media/wd/Kids_Movies"
-schedule2=watch_directory3,5,5,"load_start=/home/shmyg/torrents/Misc/*.torrent,d.set_directory=/media/wd/Misc"
+method.set_key = event.download.finished,notify_me,"execute2=/home/shmyg/scripts/shell/mail.sh,$d.name="
+trackers.use_udp.set=yes
+schedule2=watch_directory1,5,5,"load.start=/home/shmyg/torrents/Cinema/*.torrent,\"d.custom1.set=/media/wd1/Cinema\""
+schedule2=watch_directory2,5,5,"load.start=/home/shmyg/torrents/KidsMovies/*.torrent,\"d.custom1.set=/media/wd1/KidsMovies\""
+schedule2=watch_directory3,5,5,"load.start=/home/shmyg/torrents/Misc/*.torrent,\"d.custom1.set=/media/wd/Misc\""
+schedule2=watch_directory4,5,5,"load.start=/home/shmyg/torrents/Shows/*.torrent,\"d.custom1.set=/media/wd1/Shows\""
 schedule = untied_directory,5,5,stop_untied=
 schedule = tied_directory,5,5,start_tied=
 ratio.enable=
-ratio.min.set=200
+ratio.min.set=300
 ratio.max.set=1000
 ratio.upload.set=200M
